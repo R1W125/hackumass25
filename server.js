@@ -21,31 +21,48 @@ function createNewGame(userId) {
       {
         province_id: "1",
         faction_id: "1",
-        name: "Province 1",
+        centroid: [0.3, 0.5],
         border: [
           [0.1, 0.2],
           [0.3, 0.8],
           [0.5, 0.6],
           [0.4, 0.4],
         ],
+        name: "Province 1",
         army: { faction_id: "1", numbers: 100 },
+        fort : false,
+        port : true,
+        neighbors: [],
       },
       {
         province_id: "2",
         faction_id: "2",
-        name: "Province 2",
+        centroid: [0.6, 0.7],
         border: [
           [0.4, 0.6],
           [0.7, 0.8],
           [0.8, 0.6],
           [0.4, 0.4],
         ],
+        name: "Province 2",
         army: { faction_id: "2", numbers: 50 },
+        fort : true,
+        port : false,
+        neighbors: [],
       },
     ],
+    continents: [
+        [
+            [0.0, 0.0],
+            [.5, 0.0],
+            [.5, .5],
+            [0.0, .5]
+
+    ]
+],
     factions: [
-      { faction_id: "1", name: "Red", turn_ended: false },
-      { faction_id: "2", name: "Blue", turn_ended: false },
+      { faction_id: "1", is_valiable: true, is_defeated: false, turn_ended: false },
+      { faction_id: "2", is_valiable: true, is_defeated: false, turn_ended: false },
     ],
   };
 

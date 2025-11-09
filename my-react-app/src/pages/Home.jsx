@@ -1,3 +1,4 @@
+// src/pages/Home.jsx
 import { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
@@ -18,20 +19,22 @@ export default function Home({ session }) {
     const fetchGames = async () => {
       const { data, error } = await supabase
         .from("players")
-        .select("game_id, faction_id")
-        .eq("user_id", userId);
+        .select("*") // get all columns
+        .eq("user_id", userId); // fetch all rows sharing the same 'id'
 
-      if (error) console.error("Error fetching games:", error);
-      else {
-        setGames(
-          data.map((d) => ({
-            game_id: d.game_id,
-            faction_id: d.faction_id,
-            name: `Game ${d.game_id.substring(0,6)}`,
-          }))
-        );
+      if (error) {
+        console.error("Error fetching games:", error);
+        return;
       }
+
+      setGames(
+        data.map((d) => ({
+          ...d,
+          name: `Game ${d.game_id.substring(0, 6)}`,
+        }))
+      );
     };
+
     fetchGames();
   }, [userId]);
 
@@ -49,7 +52,7 @@ export default function Home({ session }) {
         else {
           setGames((prev) => [
             ...prev,
-            { game_id, faction_id, name: `Game ${game_id.substring(0, 6)}` },
+            { id: Date.now(), user_id: userId, game_id, faction_id, created_at: new Date().toISOString(), name: `Game ${game_id.substring(0, 6)}` },
           ]);
           setNewGameLoading(false);
         }
@@ -65,12 +68,14 @@ export default function Home({ session }) {
     sendMessage({
       type: "chat",
       sender: "You",
+      //add number of factions and send it to the server
       prompt: { type: "new_game", user: userId },
     });
   };
 
   return (
     <div style={{ maxWidth: 1000, margin: "2rem auto", padding: "1rem" }}>
+      {/* Profile Section */}
       <section style={{ marginBottom: "2rem", border: "1px solid #ccc", padding: "1rem" }}>
         <h2>Profile</h2>
         <p>Email: {session.user.email}</p>
@@ -78,6 +83,7 @@ export default function Home({ session }) {
         <button onClick={() => supabase.auth.signOut()}>Sign Out</button>
       </section>
 
+      {/* Join Existing Games Section */}
       <section style={{ marginBottom: "2rem", border: "1px solid #ccc", padding: "1rem" }}>
         <h2>Join Existing Games</h2>
         {games.length === 0 ? (
@@ -85,7 +91,7 @@ export default function Home({ session }) {
         ) : (
           games.map((game) => (
             <button
-              key={`${game.game_id}-${game.faction_id}`}
+              key={`${game.id}-${new Date(game.created_at).getTime()}`} // unique key
               onClick={() =>
                 navigate("/game", {
                   state: { game_id: game.game_id, faction_id: game.faction_id },
@@ -99,6 +105,7 @@ export default function Home({ session }) {
         )}
       </section>
 
+      {/* Start New Game Section */}
       <section style={{ marginBottom: "2rem" }}>
         <button
           onClick={handleNewGame}
@@ -113,6 +120,7 @@ export default function Home({ session }) {
         </button>
       </section>
 
+      {/* Map Preview Section */}
       <section style={{ border: "1px solid #ccc", padding: "1rem" }}>
         <h2>Current World Map</h2>
         <p style={{ marginBottom: "1rem", color: "#555" }}>
