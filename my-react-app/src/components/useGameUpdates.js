@@ -1,70 +1,72 @@
 import { useEffect, useRef, useState } from "react";
 
 export default function useGameUpdates(wsUrl) {
-  const [gameState, setGameState] = useState(null);
+  const [initData, setInitData] = useState(null);
   const [connected, setConnected] = useState(false);
   const ws = useRef(null);
+  const reconnectTimeout = useRef(null);
 
   useEffect(() => {
     if (!wsUrl) return;
 
-    ws.current = new WebSocket(wsUrl);
+    const connect = () => {
+      ws.current = new WebSocket(wsUrl);
 
-    ws.current.onopen = () => {
-      console.log("✅ WebSocket connected:", wsUrl);
-      setConnected(true);
-    };
+      ws.current.onopen = () => {
+        setConnected(true);
+        console.log("✅ WebSocket connected");
+      };
 
-    ws.current.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log("📩 Received from server:", data);
+      ws.current.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log("📩 Received:", data);
 
-        if (data.type === "init") {
-          setGameState(data.gameState);
-        } else if (data.type === "update") {
-          setGameState((prev) => {
-            if (!prev) return prev;
+          if (data.type === "init") {
+            setInitData(data);
+          } else if (data.type === "update") {
+            setInitData((prev) => {
+              if (!prev?.gameState) return prev;
+              const updated = { ...prev, gameState: { ...prev.gameState } };
 
-            const updated = { ...prev };
-            const cls = data.class;
-            const idKey = cls.slice(0, -1) + "_id";
-            const idx = updated[cls].findIndex((x) => x[idKey] === data.id);
-
-            if (idx !== -1) {
-              updated[cls][idx] = {
-                ...updated[cls][idx],
-                ...data.updates,
-              };
-            }
-
-            return updated;
-          });
+              if (data.class === "provinces") {
+                const idx = updated.gameState.provinces.findIndex(
+                  (p) => p.province_id === data.id
+                );
+                if (idx !== -1) {
+                  updated.gameState.provinces[idx] = {
+                    ...updated.gameState.provinces[idx],
+                    ...data.updates,
+                  };
+                }
+              }
+              return updated;
+            });
+          }
+        } catch (err) {
+          console.error("❌ Failed to parse message:", err);
         }
-      } catch (err) {
-        console.error("❌ Failed to parse WebSocket message:", err);
-      }
+      };
+
+      ws.current.onerror = console.error;
+
+      ws.current.onclose = () => {
+        setConnected(false);
+        reconnectTimeout.current = setTimeout(connect, 3000);
+      };
     };
 
-    ws.current.onerror = (err) => console.error("⚠️ WebSocket error:", err);
-    ws.current.onclose = () => {
-      console.log("🔌 WebSocket closed");
-      setConnected(false);
-    };
-
+    connect();
     return () => {
+      clearTimeout(reconnectTimeout.current);
       ws.current?.close();
     };
   }, [wsUrl]);
 
-  // ✅ Send a message to the server
   const sendMessage = (data) => {
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify(data));
-    } else {
-      console.warn("⚠️ Tried to send message, but WebSocket is not open.");
-    }
+    if (ws.current?.readyState === WebSocket.OPEN) ws.current.send(JSON.stringify(data));
+    else console.warn("⚠️ WS not open");
   };
 
-  return { gameState, connected, sendMessage };
+  return { initData, connected, sendMessage };
 }

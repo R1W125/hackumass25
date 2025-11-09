@@ -3,96 +3,74 @@ export const initialGameState = {
 
     "owner": "dsch",
 
-    "factions": [
-        {
-            "faction_id": "1",
-            "name": "My Kingdom",
-            "controlled_by": "dsch"
-        },
-        {
-            "faction_id": "2",
-            "name": "My Kingdom 2",
-            "controlled_by": "dsch"
-        }
-    ],
+    "is_game_over": false,
 
-    "cities": [
+    "provinces": [
         {
-            "isCapital": true,
-            "coords": [60, 70],
+            "province_id": "1",
             "faction_id": "1",
-            "city_id": "c1"
+            "border": [[.10, .20],
+                       [.30, .80],
+                       [.50, .60], 
+                       [.40, .40]],
+            "centroid": [.32, .50],
+            "name": "p1",
+            "city": false,
+            "army": {
+                "faction_id": "1",
+                "numbers": 100
+                    },
+            "port": false,
+            "fort": true,
+            "neighbors": []
+
         },
         {
-            "isCapital": false,
-            "coords": [80, 60],
+            "province_id": "2",
             "faction_id": "2",
-            "city_id": "c2"
+            "border": [[.40, .60],
+                       [.70, .80],
+                       [.80, .60], 
+                       [.40, .40]],
+            "centroid": [.10, .10],
+            "name": "p2",
+            "city": false,
+            "army": {
+                "faction_id": "2",
+                "numbers": 50
+                    },
+            "port": true,
+            "fort": false,
+            "neighbors": []
+
         }
     ],
 
     "continents": [
         {
             "outline": [
-                [10, 20], 
-                [30, 80],
-                [50, 60],
-                [40, 40]
+                [0, 1], 
+                [0, 0],
+                [.5, 0],
+                [.5, .5]
             ]
         },
         {
             "outline": [
-                [50, 50], 
-                [63, 110],
-                [80, 30]
+                [.50, .50], 
+                [.63, .110],
+                [.80, .30]
             ]
         }
     ],
 
-    "territory": [
+    "factions": [
         {
-        "faction_id": "1",
-        "outline": [
-            [10, 20], 
-            [3, 4],
-            [50, 60]
-        ],
-        "territory_id": "t1"
-        },
-        {
-        "faction_id": "2",
-        "outline": [
-            [15, 16], 
-            [39, 61],
-            [11, 21]
-        ],
-        "territory_id": "t2"
-    }
-],
-
-    "ports": [
-        {
-            "coords": [30, 40],
             "faction_id": "1",
-            "port_id": "p1"
-        }
-    ],
-
-    "ships": [
-        {
-            "coords": [1, 2],
-            "faction_id": "1",
-            "number": 50,
-            "fleet_id": "s1"
-        }
-    ],
-
-    "armies": [
-        {
-            "coords": [20, 17],
-            "faction_id": "1",
-            "number": 50,
-            "army_id": "a1"
+            "name": "Red",
+            "is_avaliable": true,
+            "is_defended": false,
+            "turn_ended": false,
         }
     ]
     

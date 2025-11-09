@@ -1,154 +1,125 @@
-// import { useState } from 'react'
-// import { supabase } from '../supabaseClient'
-
-// export default function Home({ session }) {
-//   const [games, setGames] = useState([]) // placeholder for current games
-
-//   const userId = session.user.id
-
-//   const handleNewGame = async () => {
-//     // Example: create a new game and add current user as player
-//     const { data: newGame, error: gameError } = await supabase
-//       .from('games')
-//       .insert({ name: 'New Game' })
-//       .select()
-//       .single()
-
-//     if (gameError) {
-//       console.error('Error creating game:', gameError)
-//       return
-//     }
-
-//     const { error: playerError } = await supabase.from('players').insert({
-//       user_id: userId,
-//       game_id: newGame.id,
-//       faction_id: 1, // default faction
-//     })
-
-//     if (playerError) {
-//       console.error('Error joining game:', playerError)
-//       return
-//     }
-
-//     // Update current games list
-//     setGames([...games, newGame])
-//   }
-
-//   return (
-//     <div style={{ maxWidth: 800, margin: '2rem auto', padding: '1rem' }}>
-//       {/* Profile Section */}
-//       <section style={{ marginBottom: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-//         <h2>Profile</h2>
-//         <p>Email: {session.user.email}</p>
-//         <p>User ID: {userId}</p>
-//         <button onClick={() => supabase.auth.signOut()}>Sign Out</button>
-//       </section>
-
-//       {/* Current Games Section */}
-//       <section style={{ marginBottom: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-//         <h2>Current Games</h2>
-//         {games.length === 0 ? (
-//           <p>No games joined yet.</p>
-          
-//         ) : (
-//           <ul>
-//             {games.map((game) => (
-//               <li key={game.id}>{game.name}</li>
-//             ))}
-//           </ul>
-//         )}
-//       </section>
-
-//       {/* New Game Button */}
-//       <section>
-//         <button
-//           onClick={handleNewGame}
-//           style={{ padding: '0.75rem 1.5rem', fontSize: '1rem', cursor: 'pointer' }}
-//         >
-//           New Game
-//         </button>
-//       </section>
-//     </div>
-//   )
-// }
-
-
-import { useState } from 'react'
-import { supabase } from '../supabaseClient'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from "react";
+import { supabase } from "../supabaseClient";
+import { useNavigate } from "react-router-dom";
+import Map from "../components/Map";
+import { initialGameState } from "../components/Gamestate";
+import useGameUpdates from "../components/useGameUpdates";
 
 export default function Home({ session }) {
-  const [games, setGames] = useState([]) // placeholder for current games
-  const userId = session.user.id
-  const navigate = useNavigate()
+  const [games, setGames] = useState([]);
+  const [newGameLoading, setNewGameLoading] = useState(false);
+  const userId = session.user.id;
+  const navigate = useNavigate();
 
-  const handleNewGame = async () => {
-    const { data: newGame, error: gameError } = await supabase
-      .from('games')
-      .insert({ name: 'New Game' })
-      .select()
-      .single()
+  const { sendMessage, connected, initData } = useGameUpdates("ws://localhost:8080");
 
-    if (gameError) {
-      console.error('Error creating game:', gameError)
-      return
+  // Load existing games from Supabase
+  useEffect(() => {
+    const fetchGames = async () => {
+      const { data, error } = await supabase
+        .from("players")
+        .select("game_id, faction_id")
+        .eq("user_id", userId);
+
+      if (error) console.error("Error fetching games:", error);
+      else {
+        setGames(
+          data.map((d) => ({
+            game_id: d.game_id,
+            faction_id: d.faction_id,
+            name: `Game ${d.game_id.substring(0,6)}`,
+          }))
+        );
+      }
+    };
+    fetchGames();
+  }, [userId]);
+
+  // Watch for new game creation from WebSocket
+  useEffect(() => {
+    if (!initData || initData.owner !== userId) return;
+
+    const { game_id, faction_id } = initData;
+
+    supabase
+      .from("players")
+      .insert([{ user_id: userId, game_id, faction_id }])
+      .then(({ error }) => {
+        if (error) console.error("Supabase insert failed:", error);
+        else {
+          setGames((prev) => [
+            ...prev,
+            { game_id, faction_id, name: `Game ${game_id.substring(0, 6)}` },
+          ]);
+          setNewGameLoading(false);
+        }
+      });
+  }, [initData, userId]);
+
+  const handleNewGame = () => {
+    if (!connected) {
+      alert("WebSocket not connected. Try again in a moment.");
+      return;
     }
-
-    const { error: playerError } = await supabase.from('players').insert({
-      user_id: userId,
-      game_id: newGame.id,
-      faction_id: 1, // default faction
-    })
-
-    if (playerError) {
-      console.error('Error joining game:', playerError)
-      return
-    }
-
-    setGames([...games, newGame])
-  }
+    setNewGameLoading(true);
+    sendMessage({
+      type: "chat",
+      sender: "You",
+      prompt: { type: "new_game", user: userId },
+    });
+  };
 
   return (
-    <div style={{ maxWidth: 800, margin: '2rem auto', padding: '1rem' }}>
-      {/* Profile Section */}
-      <section style={{ marginBottom: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
+    <div style={{ maxWidth: 1000, margin: "2rem auto", padding: "1rem" }}>
+      <section style={{ marginBottom: "2rem", border: "1px solid #ccc", padding: "1rem" }}>
         <h2>Profile</h2>
         <p>Email: {session.user.email}</p>
         <p>User ID: {userId}</p>
         <button onClick={() => supabase.auth.signOut()}>Sign Out</button>
       </section>
 
-      {/* Current Games Section */}
-      <section style={{ marginBottom: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-        <h2>Current Games</h2>
+      <section style={{ marginBottom: "2rem", border: "1px solid #ccc", padding: "1rem" }}>
+        <h2>Join Existing Games</h2>
         {games.length === 0 ? (
           <p>No games joined yet.</p>
         ) : (
-          <ul>
-            {games.map((game) => (
-              <li key={game.id}>{game.name}</li>
-            ))}
-          </ul>
+          games.map((game) => (
+            <button
+              key={`${game.game_id}-${game.faction_id}`}
+              onClick={() =>
+                navigate("/game", {
+                  state: { game_id: game.game_id, faction_id: game.faction_id },
+                })
+              }
+              style={{ display: "block", marginBottom: "0.5rem" }}
+            >
+              Join {game.name} (Faction {game.faction_id})
+            </button>
+          ))
         )}
       </section>
 
-      {/* New Game Button */}
-      <section style={{ marginTop: '1rem' }}>
+      <section style={{ marginBottom: "2rem" }}>
         <button
           onClick={handleNewGame}
-          style={{ padding: '0.75rem 1.5rem', fontSize: '1rem', cursor: 'pointer', marginRight: '1rem' }}
+          disabled={newGameLoading}
+          style={{
+            padding: "0.75rem 1.5rem",
+            fontSize: "1rem",
+            opacity: newGameLoading ? 0.6 : 1,
+          }}
         >
-          New Game
-        </button>
-
-        {/* 👇 Added button to navigate to Game page */}
-        <button
-          onClick={() => navigate('/game')}
-          style={{ padding: '0.75rem 1.5rem', fontSize: '1rem', cursor: 'pointer' }}
-        >
-          Go to Game Page
+          {newGameLoading ? "Starting..." : "Start New Game"}
         </button>
       </section>
+
+      <section style={{ border: "1px solid #ccc", padding: "1rem" }}>
+        <h2>Current World Map</h2>
+        <p style={{ marginBottom: "1rem", color: "#555" }}>
+          This is a static preview of the game map.
+        </p>
+        <Map gameState={initialGameState} />
+      </section>
     </div>
-  )
+  );
 }

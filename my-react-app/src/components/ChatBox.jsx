@@ -1,15 +1,24 @@
 import { useState } from "react";
 
-export default function ChatBox({ sendMessage }) {
+export default function ChatBox({ sendMessage, selectedGame }) {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
 
   const handleSend = (e) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || !selectedGame) return;
 
-    const msgObj = { type: "chat", text: message, time: new Date().toISOString(), sender: "You" };
-    setMessages((prev) => [...prev, msgObj]);
+    const msgObj = {
+      type: "chat",
+      prompt: {
+        game_id: selectedGame.game_id,
+        faction_id: selectedGame.faction_id,
+        text: message
+      },
+      sender: "You"
+    };
+
+    setMessages(prev => [...prev, msgObj]);
     sendMessage(msgObj);
     setMessage("");
   };
@@ -19,8 +28,10 @@ export default function ChatBox({ sendMessage }) {
       <div className="flex-1 overflow-y-auto mb-2 space-y-1">
         {messages.map((msg, i) => (
           <div key={i} className="text-sm">
-            <strong>{msg.sender}:</strong> {msg.text}
-            <span className="text-xs text-gray-400 ml-2">{new Date(msg.time).toLocaleTimeString()}</span>
+            <strong>{msg.sender}:</strong> {msg.prompt?.text || msg.text}
+            <span className="text-xs text-gray-400 ml-2">
+              {new Date(msg.time).toLocaleTimeString()}
+            </span>
           </div>
         ))}
       </div>
