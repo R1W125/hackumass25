@@ -1,34 +1,17 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import Map from "../components/Map";
 import ChatBox from "../components/ChatBox";
-import { initialGameState } from "../components/Gamestate";
-
+import useGameUpdates from "../components/useGameUpdates";
 
 export default function Game() {
-  const navigate = useNavigate();
-  const [gameState, setGameState] = useState(initialGameState);
+  const { gameState, connected, sendMessage } = useGameUpdates("ws://localhost:8080");
+
+  if (!connected) return <p>Connecting to game server...</p>;
+  if (!gameState) return <p>Loading game...</p>;
 
   return (
-    <div style={{ textAlign: "center", padding: "1rem" }}>
-      <h2>Game: {gameState.game_id}</h2>
-      
-
-      <button
-        onClick={() => navigate("/")}
-        style={{
-          marginTop: "1rem",
-          padding: "0.75rem 1.5rem",
-          cursor: "pointer",
-          borderRadius: "8px",
-        }}
-      >
-        ⬅️ Back to Home
-      </button>
-
+    <div style={{ display: "flex", gap: "2rem", padding: "1rem" }}>
       <Map gameState={gameState} />
-
-        <ChatBox gameId={gameState.game_id} />
+      <ChatBox sendMessage={sendMessage} />
     </div>
   );
 }

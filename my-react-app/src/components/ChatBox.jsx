@@ -1,43 +1,41 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
-export default function ChatBox({ webhookUrl = "https://webhook.site/3fffba0d-22bb-4926-8a53-0fb3f827e3fd" }) {
+export default function ChatBox({ sendMessage }) {
   const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
 
-  const sendMessage = async (e) => {
+  const handleSend = (e) => {
     e.preventDefault();
     if (!message.trim()) return;
 
-    const payload = {
-      message: message.trim(),
-      timestamp: new Date().toISOString(),
-    };
-
-    console.log("Sending payload:", payload); // debug log
-
-    try {
-      const res = await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      console.log("Message sent, response status:", res.status);
-    } catch (err) {
-      console.error("Failed to send message:", err);
-    }
-
-    setMessage(""); // clear input
+    const msgObj = { type: "chat", text: message, time: new Date().toISOString(), sender: "You" };
+    setMessages((prev) => [...prev, msgObj]);
+    sendMessage(msgObj);
+    setMessage("");
   };
 
   return (
-    <form onSubmit={sendMessage} style={{ display: "flex", gap: "8px" }}>
-      <input
-        type="text"
-        placeholder="Type a message..."
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        style={{ flex: 1, padding: "8px" }}
-      />
-      <button type="submit" style={{ padding: "8px 16px" }}>Send</button>
-    </form>
+    <div className="flex flex-col border rounded-lg p-4 w-96 h-96 bg-white/90">
+      <div className="flex-1 overflow-y-auto mb-2 space-y-1">
+        {messages.map((msg, i) => (
+          <div key={i} className="text-sm">
+            <strong>{msg.sender}:</strong> {msg.text}
+            <span className="text-xs text-gray-400 ml-2">{new Date(msg.time).toLocaleTimeString()}</span>
+          </div>
+        ))}
+      </div>
+      <form onSubmit={handleSend} className="flex gap-2">
+        <input
+          type="text"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Type a message..."
+          className="flex-1 border rounded px-2 py-1"
+        />
+        <button type="submit" className="bg-blue-600 text-white rounded px-4">
+          Send
+        </button>
+      </form>
+    </div>
   );
 }
