@@ -178,7 +178,17 @@ wss.on("connection", (ws) => {
             });
 
             console.log("🔄 Full test update broadcasted.");
-            }
+        }
+
+        if (text === "/end_turn") {
+            broadcastToGame(game_id, {
+            type: "chat",
+            text: "hello",
+            sender: "Server",
+            time: new Date().toISOString(),
+            });
+            console.log("💬 End turn triggered: hello sent to chat");
+        }
 
       }
     } catch (err) {

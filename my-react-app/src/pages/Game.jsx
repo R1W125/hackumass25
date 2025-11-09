@@ -57,6 +57,10 @@ export default function Game() {
     sendMessage({ prompt: { type: "message", game_id: gameId, text: "/test_full" } });
   };
 
+  const handleEndTurn = () => {
+    sendMessage({ prompt: { type: "message", game_id: gameId, faction_id: factionId, text: "/end_turn" } });
+  }
+
 
   return (
     <div style={{ padding: "1rem", textAlign: "center" }}>
@@ -119,6 +123,8 @@ export default function Game() {
         🔄 Full Test Update
       </button>
 
+      
+
 
       <div style={{ marginTop: "1rem" }}>
         <Map gameState={gameState} />
@@ -127,6 +133,22 @@ export default function Game() {
       <div style={{ marginTop: "2rem", display: "flex", justifyContent: "center" }}>
         <ChatBox sendMessage={sendMessage} selectedGame={{ game_id: gameId, faction_id: factionId }} />
       </div>
+
+      <button
+        onClick={handleEndTurn}
+        style={{
+            margin: "1rem",
+            padding: "0.5rem 1rem",
+            border: "none",
+            borderRadius: "6px",
+            backgroundColor: "#f57c00",
+            color: "white",
+            cursor: "pointer",
+        }}
+        >
+        End Turn
+      </button>
+
     </div>
   );
 }
