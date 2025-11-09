@@ -30,7 +30,7 @@ export default function ChatBox({ sendMessage, selectedGame }) {
           <div key={i} className="text-sm">
             <strong>{msg.sender}:</strong> {msg.prompt?.text || msg.text}
             <span className="text-xs text-gray-400 ml-2">
-              {new Date(msg.time).toLocaleTimeString()}
+              
             </span>
           </div>
         ))}

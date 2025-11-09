@@ -9,6 +9,7 @@ import useGameUpdates from "../components/useGameUpdates";
 export default function Home({ session }) {
   const [games, setGames] = useState([]);
   const [newGameLoading, setNewGameLoading] = useState(false);
+  const [numFactions, setNumFactions] = useState(4); // default number of factions
   const userId = session.user.id;
   const navigate = useNavigate();
 
@@ -19,8 +20,8 @@ export default function Home({ session }) {
     const fetchGames = async () => {
       const { data, error } = await supabase
         .from("players")
-        .select("*") // get all columns
-        .eq("user_id", userId); // fetch all rows sharing the same 'id'
+        .select("*")
+        .eq("user_id", userId);
 
       if (error) {
         console.error("Error fetching games:", error);
@@ -52,7 +53,14 @@ export default function Home({ session }) {
         else {
           setGames((prev) => [
             ...prev,
-            { id: Date.now(), user_id: userId, game_id, faction_id, created_at: new Date().toISOString(), name: `Game ${game_id.substring(0, 6)}` },
+            {
+              id: Date.now(),
+              user_id: userId,
+              game_id,
+              faction_id,
+              created_at: new Date().toISOString(),
+              name: `Game ${game_id.substring(0, 6)}`,
+            },
           ]);
           setNewGameLoading(false);
         }
@@ -68,8 +76,11 @@ export default function Home({ session }) {
     sendMessage({
       type: "chat",
       sender: "You",
-      //add number of factions and send it to the server
-      prompt: { type: "new_game", user: userId },
+      prompt: {
+        type: "new_game",
+        user: userId,
+        num_factions: numFactions, // send the number of factions to the server
+      },
     });
   };
 
@@ -91,7 +102,7 @@ export default function Home({ session }) {
         ) : (
           games.map((game) => (
             <button
-              key={`${game.id}-${new Date(game.created_at).getTime()}`} // unique key
+              key={`${game.id}-${new Date(game.created_at).getTime()}`}
               onClick={() =>
                 navigate("/game", {
                   state: { game_id: game.game_id, faction_id: game.faction_id },
@@ -106,7 +117,21 @@ export default function Home({ session }) {
       </section>
 
       {/* Start New Game Section */}
-      <section style={{ marginBottom: "2rem" }}>
+      <section style={{ marginBottom: "2rem", border: "1px solid #ccc", padding: "1rem" }}>
+        <h2>Start New Game</h2>
+        <div style={{ marginBottom: "1rem" }}>
+          <label>
+            Number of Factions:{" "}
+            <input
+              type="number"
+              min={2}
+              max={10}
+              value={numFactions}
+              onChange={(e) => setNumFactions(Number(e.target.value))}
+              style={{ width: "60px", padding: "0.25rem" }}
+            />
+          </label>
+        </div>
         <button
           onClick={handleNewGame}
           disabled={newGameLoading}

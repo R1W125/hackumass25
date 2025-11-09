@@ -8,16 +8,35 @@ export default function Map({ gameState }) {
   const height = 600;
   const project = ([x, y]) => [x * width, height - y * height];
 
-  // Safe defaults for continents and provinces
+  // Safe defaults
   const continents = gameState.continents || [];
   const provinces = gameState.provinces || [];
 
   const factionColors = useMemo(() => {
-    const colors = ["#e57373", "#64b5f6", "#81c784", "#fff176", "#ba68c8"];
+    // Expanded set of non-blue colors
+    const colors = [
+      "#e57373", // red
+      "#81c784", // green
+      "#fff176", // yellow
+      "#ba68c8", // purple
+      "#ffb74d", // orange
+      "#a1887f", // brown
+      "#f06292", // pink
+      "#4db6ac", // teal
+      "#ffd54f", // gold
+      "#90a4ae", // gray
+    ];
+
     const map = {};
-    (gameState.factions || []).forEach((f, i) => {
-      map[f.faction_id] = colors[i % colors.length];
+    const usedColors = new Set();
+
+    (gameState.factions || []).forEach((f) => {
+      // Pick first color not used yet
+      const available = colors.find((c) => !usedColors.has(c)) || "#ddd";
+      map[f.faction_id] = available;
+      usedColors.add(available);
     });
+
     return map;
   }, [gameState.factions]);
 
@@ -33,25 +52,27 @@ export default function Map({ gameState }) {
     >
       {continents.map((c, i) => (
         <polygon
-          key={`continent-${i}`}
-          points={(c.outline || []).map((p) => project(p).join(",")).join(" ")}
-          fill="#c2e7d9"
-          stroke="#4d8061"
-          strokeWidth="2"
-          opacity={0.6}
+            key={`continent-${i}`}
+            points={(c.outline || []).map((p) => project(p).join(",")).join(" ")}
+            fill="#c2e7d9"
+            stroke="#4d8061"
+            strokeWidth="2"
+            strokeOpacity={0.2} // less opaque borders
+            opacity={1} // keep fill fully opaque
         />
-      ))}
+        ))}
 
-      {provinces.map((p) => (
+        {provinces.map((p) => (
         <polygon
-          key={`province-${p.province_id}`}
-          points={(p.border || []).map((pt) => project(pt).join(",")).join(" ")}
-          fill={factionColors[p.faction_id] || "#ddd"}
-          stroke="#333"
-          strokeWidth="1.5"
-          opacity={0.85}
+            key={`province-${p.province_id}`}
+            points={(p.border || []).map((pt) => project(pt).join(",")).join(" ")}
+            fill={p.is_ocean ? "#64b5f6" : factionColors[p.faction_id] || "#ddd"}
+            stroke="#333"
+            strokeWidth="1.5"
+            strokeOpacity={0.3} // less opaque borders
+            opacity={1} // keep fill fully opaque
         />
-      ))}
+        ))}
 
       {provinces.map((p) => {
         const [x, y] = project(p.centroid || [0, 0]);

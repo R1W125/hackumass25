@@ -144,6 +144,42 @@ wss.on("connection", (ws) => {
           });
           console.log("🔄 Test update broadcasted.");
         }
+
+        if (text === "/test_full") {
+            const game = games[game_id];
+
+            // Update armies randomly
+            game.provinces.forEach((p) => {
+                p.army.numbers = Math.floor(Math.random() * 200);
+                p.army.faction_id = Math.random() < 0.5 ? "1" : "2";
+            });
+
+            // Toggle forts, cities, ports randomly
+            game.provinces.forEach((p) => {
+                p.fort = Math.random() < 0.5;
+                p.city = Math.random() < 0.5;
+                p.port = Math.random() < 0.5;
+            });
+
+            // Change factions' turn ended state randomly
+            game.factions.forEach((f) => {
+                f.turn_ended = Math.random() < 0.5;
+                f.is_defeated = Math.random() < 0.2;
+            });
+
+            // Broadcast updated provinces
+            game.provinces.forEach((p) => {
+                broadcastToGame(game_id, {
+                type: "update",
+                class: "provinces",
+                id: p.province_id,
+                updates: { ...p },
+                });
+            });
+
+            console.log("🔄 Full test update broadcasted.");
+            }
+
       }
     } catch (err) {
       console.error("❌ Error handling message:", err);

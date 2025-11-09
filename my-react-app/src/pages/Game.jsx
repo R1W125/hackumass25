@@ -2,10 +2,12 @@
 import React, { useEffect, useState } from "react";
 import Map from "../components/Map";
 import { useWebSocket } from "../assets/context/WebSocketContext";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import ChatBox from "../components/ChatBox";
 
 export default function Game() {
   const { state } = useLocation();
+  const navigate = useNavigate();
   const { game_id: initialGameId, faction_id: initialFactionId } = state || {};
   const { connected, sendMessage, addListener } = useWebSocket();
 
@@ -16,7 +18,6 @@ export default function Game() {
   // Rejoin game whenever WebSocket reconnects
   useEffect(() => {
     if (!connected || !gameId) return;
-
     sendMessage({ prompt: { type: "join_game", game_id: gameId, user: factionId } });
   }, [connected, gameId, factionId, sendMessage]);
 
@@ -25,14 +26,12 @@ export default function Game() {
     if (!connected) return;
 
     const removeListener = addListener((data) => {
-      // Initial game data
       if (data.type === "init") {
         setGameId(data.game_id);
         setFactionId(data.faction_id);
         setGameState(data.gameState);
       }
 
-      // Province updates
       if (data.type === "update" && data.class === "provinces") {
         setGameState((prev) => {
           if (!prev) return prev;
@@ -54,8 +53,39 @@ export default function Game() {
     sendMessage({ prompt: { type: "message", game_id: gameId, text: "/test" } });
   };
 
+  const handleFullTestUpdate = () => {
+    sendMessage({ prompt: { type: "message", game_id: gameId, text: "/test_full" } });
+  };
+
+
   return (
     <div style={{ padding: "1rem", textAlign: "center" }}>
+      {/* Sticky Back button */}
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          backgroundColor: "#fff",
+          padding: "0.5rem 0",
+          zIndex: 100,
+          borderBottom: "1px solid #ccc",
+        }}
+      >
+        <button
+          onClick={() => navigate("/")}
+          style={{
+            padding: "0.5rem 1rem",
+            border: "none",
+            borderRadius: "6px",
+            backgroundColor: "#f44336",
+            color: "white",
+            cursor: "pointer",
+          }}
+        >
+          🔙 Back
+        </button>
+      </div>
+
       <h2>🎮 Game ID: {gameId}</h2>
       <p>🛡️ Faction: {factionId}</p>
 
@@ -74,8 +104,28 @@ export default function Game() {
         ⚔️ Test Update
       </button>
 
+      <button
+        onClick={handleFullTestUpdate}
+        style={{
+            margin: "1rem",
+            padding: "0.5rem 1rem",
+            border: "none",
+            borderRadius: "6px",
+            backgroundColor: "#f57c00",
+            color: "white",
+            cursor: "pointer",
+        }}
+        >
+        🔄 Full Test Update
+      </button>
+
+
       <div style={{ marginTop: "1rem" }}>
         <Map gameState={gameState} />
+      </div>
+
+      <div style={{ marginTop: "2rem", display: "flex", justifyContent: "center" }}>
+        <ChatBox sendMessage={sendMessage} selectedGame={{ game_id: gameId, faction_id: factionId }} />
       </div>
     </div>
   );
